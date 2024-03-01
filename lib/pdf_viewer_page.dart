@@ -14,9 +14,10 @@ class PdfViewerPage extends StatefulWidget {
 class _MyHomePageState extends State<PdfViewerPage>
     with WidgetsBindingObserver {
   final _flutterP2pConnectionPlugin = FlutterP2pConnection();
-
   StreamSubscription<WifiP2PInfo>? _streamWifiInfo;
   StreamSubscription<List<DiscoveredPeers>>? _streamPeers;
+  String? _filePath;
+  int _currentPage = 0;
 
   @override
   void initState() {
@@ -44,7 +45,6 @@ class _MyHomePageState extends State<PdfViewerPage>
     _init();
   }
 
-  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _flutterP2pConnectionPlugin.unregister();
@@ -75,6 +75,9 @@ class _MyHomePageState extends State<PdfViewerPage>
     });
 
     WifiP2PGroupInfo? info = await _flutterP2pConnectionPlugin.groupInfo();
+    if (info == null) {
+      connectToSocket();
+    }
     _streamPeers = _flutterP2pConnectionPlugin.streamPeers().listen((event) {
       print("kurac1 $event");
 
@@ -100,22 +103,11 @@ class _MyHomePageState extends State<PdfViewerPage>
               print("kita $value")});
       });
     });
+
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    return const Text("test");
-  }
-}
-
-class _PdfViewerPageState extends State<PdfViewerPage> {
-  String? _filePath;
-  int _currentPage = 0;
 
   Future<void> _openFilePicker() async {
-
-
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -123,9 +115,63 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     if (result != null) {
       setState(() {
         _filePath = result.files.single.path!;
+        startSocket();
       });
     }
   }
+
+  // For Host to start file transfer of selected PDF
+  Future startSocket() async {
+    WifiP2PGroupInfo? wifiP2PInfo = await _flutterP2pConnectionPlugin.groupInfo();
+    if (wifiP2PInfo != null && wifiP2PInfo.isGroupOwner && _filePath != null) {
+      List<TransferUpdate>? updates = await _flutterP2pConnectionPlugin.sendFiletoSocket([_filePath!]);
+      if (updates == null) {
+        print('FAILLLLLL');
+      } else {
+        print('SUCCESSSSSS');
+      }
+    }
+  }
+ // For Client to connect
+  Future connectToSocket() async {
+    WifiP2PGroupInfo? wifiP2PInfo = await _flutterP2pConnectionPlugin.groupInfo();
+    // wifiP2PInfo je stalno null sa klijentske strane????????????????
+    if (true) {
+      print("AAAAAAAAAAAAAAAAAAAAAAAa");
+      await _flutterP2pConnectionPlugin.connectToSocket(
+        groupOwnerAddress: "/192.167.49.1", // TRYING TO HARDCODE
+        // groupOwnerAddress: wifiP2PInfo!.groupOwnerAddress!,
+
+        // downloadPath is the directory where received file will be stored
+        downloadPath: "/storage/emulated/0/Download/",
+        // the max number of downloads at a time. Default is 2.
+        maxConcurrentDownloads: 2,
+        // delete incomplete transfered file
+        deleteOnError: true,
+        // on connected to socket
+        onConnect: (address) {
+          print("connected to socket: $address");
+        },
+        // receive transfer updates for both sending and receiving.
+        transferUpdate: (transfer) {
+          // transfer.count is the amount of bytes transfered
+          // transfer.total is the file size in bytes
+          // if transfer.receiving is true, you are receiving the file, else you're sending the file.
+          // call `transfer.cancelToken?.cancel()` to cancel transfer. This method is only applicable to receiving transfers.
+          print(
+              "ID: ${transfer.id}, FILENAME: ${transfer.filename}, PATH: ${transfer.path}, COUNT: ${transfer.count}, TOTAL: ${transfer.total}, COMPLETED: ${transfer.completed}, FAILED: ${transfer.failed}, RECEIVING: ${transfer.receiving}");
+        },
+        // handle string transfer from server
+        receiveString: (req) async {
+          print(req);
+        },
+      );
+    }
+  }
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -179,3 +225,5 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     );
   }
 }
+
+
