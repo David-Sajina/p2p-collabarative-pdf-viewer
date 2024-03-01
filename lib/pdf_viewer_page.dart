@@ -20,27 +20,27 @@ class _MyHomePageState extends State<PdfViewerPage>
 
   @override
   void initState() {
-
-    /*FlutterP2pConnection().checkStoragePermission().then((value) => {
-      if (!value) {FlutterP2pConnection().askStoragePermission()}
-    });*/
-
-    // FlutterP2pConnection().checkLocationPermission().then((value) => {
-    //   if (value)
-    //     {FlutterP2pConnection().enableLocationServices()}
-    //   else
-    //     {
-    //       FlutterP2pConnection().askLocationPermission().then((value) => {
-    //         if (value) {FlutterP2pConnection().enableLocationServices()}
-    //       })
-    //     }
-    // });
-    //
-    // FlutterP2pConnection().checkWifiEnabled().then((value) => {
-    //   if (!value) {FlutterP2pConnection().enableWifiServices()}
-    // });
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    checkPremissions();
+  }
+  void checkPremissions() async {
+    bool storagePermission = await FlutterP2pConnection().checkStoragePermission();
+    if (!storagePermission) {
+      await FlutterP2pConnection().askStoragePermission();
+    }
+
+    bool locationPermission = await FlutterP2pConnection().checkLocationPermission();
+    if (!locationPermission) {
+      bool askLocationPerm = await FlutterP2pConnection().askLocationPermission();
+      if (!askLocationPerm) {
+      }
+    }
+
+    bool wifiEnabled = await FlutterP2pConnection().checkWifiEnabled();
+    if (!wifiEnabled) {
+      await FlutterP2pConnection().enableWifiServices();
+    }
     _init();
   }
 
@@ -96,7 +96,7 @@ class _MyHomePageState extends State<PdfViewerPage>
 
         _flutterP2pConnectionPlugin.discover().then((value) =>
             {
-              _flutterP2pConnectionPlugin.removeGroup().then(print),
+              //_flutterP2pConnectionPlugin.createGroup().then(print),
               print("kita $value")});
       });
     });
