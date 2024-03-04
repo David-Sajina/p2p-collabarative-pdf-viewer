@@ -75,9 +75,9 @@
     },
     {
       "name": "ffi",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/ffi-2.1.0",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/ffi-2.1.2",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.3"
     },
     {
       "name": "file",
@@ -129,9 +129,9 @@
     },
     {
       "name": "http",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.1.0",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.2.1",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.3"
     },
     {
       "name": "http_parser",
@@ -237,9 +237,9 @@
     },
     {
       "name": "petitparser",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/petitparser-5.4.0",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/petitparser-6.0.2",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.2"
     },
     {
       "name": "plugin_platform_interface",
@@ -345,9 +345,9 @@
     },
     {
       "name": "url_launcher",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.2.4",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher-6.2.5",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.2"
     },
     {
       "name": "url_launcher_android",
@@ -357,9 +357,9 @@
     },
     {
       "name": "url_launcher_ios",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher_ios-6.2.4",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher_ios-6.2.5",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.2"
     },
     {
       "name": "url_launcher_linux",
@@ -381,9 +381,9 @@
     },
     {
       "name": "url_launcher_web",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher_web-2.2.0",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher_web-2.3.0",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.3"
     },
     {
       "name": "url_launcher_windows",
@@ -410,10 +410,16 @@
       "languageVersion": "3.0"
     },
     {
-      "name": "win32",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/win32-5.1.1",
+      "name": "web",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/web-0.5.0",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "win32",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/win32-5.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
     },
     {
       "name": "win32_registry",
@@ -423,9 +429,9 @@
     },
     {
       "name": "xml",
-      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/xml-6.3.0",
+      "rootUri": "file:///C:/Users/David/AppData/Local/Pub/Cache/hosted/pub.dev/xml-6.5.0",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.2"
     },
     {
       "name": "pdf_viewer",
@@ -434,7 +440,7 @@
       "languageVersion": "3.1"
     }
   ],
-  "generated": "2024-03-01T09:26:04.334109Z",
+  "generated": "2024-03-04T10:40:26.344594Z",
   "generator": "pub",
   "generatorVersion": "3.3.0"
 }

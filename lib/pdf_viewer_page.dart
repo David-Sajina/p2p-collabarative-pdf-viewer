@@ -16,6 +16,7 @@ class _MyHomePageState extends State<PdfViewerPage>
   final _flutterP2pConnectionPlugin = FlutterP2pConnection();
   StreamSubscription<WifiP2PInfo>? _streamWifiInfo;
   StreamSubscription<List<DiscoveredPeers>>? _streamPeers;
+  WifiP2PInfo? wifiP2PInfo;
   String? _filePath;
   int _currentPage = 0;
 
@@ -61,7 +62,11 @@ class _MyHomePageState extends State<PdfViewerPage>
   }
 
   void _init() async {
+
+    final _flutterP2pConnectionPlugin = FlutterP2pConnection();
+    WifiP2PInfo? wifiP2PInfo;
     List<DiscoveredPeers> peers = [];
+
 
     await _flutterP2pConnectionPlugin
         .initialize()
@@ -72,19 +77,20 @@ class _MyHomePageState extends State<PdfViewerPage>
     _streamWifiInfo =
         _flutterP2pConnectionPlugin.streamWifiP2PInfo().listen((event) {
       print("kurac $event");
+      wifiP2PInfo = event;
     });
 
-    WifiP2PGroupInfo? info = await _flutterP2pConnectionPlugin.groupInfo();
-    if (info == null) {
-      connectToSocket();
-    }
+     WifiP2PGroupInfo? info = await _flutterP2pConnectionPlugin.groupInfo();
+    // if (info == null) {
+    //  connectToSocket();
+    //}
     _streamPeers = _flutterP2pConnectionPlugin.streamPeers().listen((event) {
       print("kurac1 $event");
 
       setState(() {
 
         peers = event;
-        print("peers $peers");
+        print("peeerrrrrrs $peers");
         String? netName = info?.groupNetworkName;
         List<Client>? clients = info?.clients;
         bool? groupOwner = info?.isGroupOwner;
@@ -104,6 +110,19 @@ class _MyHomePageState extends State<PdfViewerPage>
       });
     });
 
+
+    _streamWifiInfo = _flutterP2pConnectionPlugin.streamWifiP2PInfo().listen((event) {
+      // Handle changes in connection
+      setState(() {
+        wifiP2PInfo = event;
+      });
+    });
+    // void connect() async {
+    //   await _flutterP2pConnectionPlugin.connect(peers[0].deviceAddress);
+    // }
+    // connect();
+
+    _flutterP2pConnectionPlugin.closeSocket();
   }
 
 
@@ -112,56 +131,86 @@ class _MyHomePageState extends State<PdfViewerPage>
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
+    if (result == null){
+
+      connectToSocket();
+    }
     if (result != null) {
-      setState(() {
-        _filePath = result.files.single.path!;
         startSocket();
-      });
+        _filePath = result.files.single.path!;
+        String filePath = _filePath ?? "";
+        if (_filePath == null) return;
+        List<TransferUpdate>? updates =
+        await _flutterP2pConnectionPlugin.sendFiletoSocket(
+
+            [
+              filePath,
+              // "/storage/emulated/0/Download/Likee_7100105253123033459.mp4",
+              // "/storage/0E64-4628/Download/Adele-Set-Fire-To-The-Rain-via-Naijafinix.com_.mp3",
+              // "/storage/0E64-4628/Flutter SDK/p2p_plugin.apk",
+              // "/storage/emulated/0/Download/03 Omah Lay - Godly (NetNaija.com).mp3",
+              // "/storage/0E64-4628/Download/Adele-Set-Fire-To-The-Rain-via-Naijafinix.com_.mp3",
+            ]);
+
     }
   }
 
   // For Host to start file transfer of selected PDF
   Future startSocket() async {
-    WifiP2PGroupInfo? wifiP2PInfo = await _flutterP2pConnectionPlugin.groupInfo();
-    if (wifiP2PInfo != null && wifiP2PInfo.isGroupOwner && _filePath != null) {
-      List<TransferUpdate>? updates = await _flutterP2pConnectionPlugin.sendFiletoSocket([_filePath!]);
-      if (updates == null) {
-        print('FAILLLLLL');
-      } else {
-        print('SUCCESSSSSS');
-      }
+    if (wifiP2PInfo != null) {
+      bool started = await _flutterP2pConnectionPlugin.startSocket(
+        groupOwnerAddress: wifiP2PInfo!.groupOwnerAddress,
+        downloadPath: "/storage/emulated/0/Download/",
+        maxConcurrentDownloads: 2,
+        deleteOnError: true,
+        onConnect: (name, address) {
+          print("$name connected to socket with address: $address");
+        },
+        transferUpdate: (transfer) {
+          if (transfer.completed) {
+            print(
+                "${transfer.failed ? "failed to ${transfer.receiving ? "receive" : "send"}" : transfer.receiving ? "received" : "sent"}: ${transfer.filename}");
+          }
+          print(
+              "ID: ${transfer.id}, FILENAME: ${transfer.filename}, PATH: ${transfer.path}, COUNT: ${transfer.count}, TOTAL: ${transfer.total}, COMPLETED: ${transfer.completed}, FAILED: ${transfer.failed}, RECEIVING: ${transfer.receiving}");
+        },
+        receiveString: (req) async {
+          print(req);
+        },
+      );
+      print("open socket: $started");
+      print(wifiP2PInfo!.groupOwnerAddress);
     }
   }
  // For Client to connect
   Future connectToSocket() async {
-    WifiP2PGroupInfo? wifiP2PInfo = await _flutterP2pConnectionPlugin.groupInfo();
-    // wifiP2PInfo je stalno null sa klijentske strane????????????????
-    if (true) {
-      print("AAAAAAAAAAAAAAAAAAAAAAAa");
-      await _flutterP2pConnectionPlugin.connectToSocket(
-        groupOwnerAddress: "/192.167.49.1", // TRYING TO HARDCODE
-        // groupOwnerAddress: wifiP2PInfo!.groupOwnerAddress!,
+    print("CONNECT TO SOCKET");
+    if (wifiP2PInfo != null) {
+      print("wifip2pinfo != null $wifiP2PInfo");
+      print("wifiP2PInfo details:");
+      print("isConnected: ${wifiP2PInfo?.isConnected}");
+      print("isGroupOwner: ${wifiP2PInfo?.isGroupOwner}");
+      print("groupFormed: ${wifiP2PInfo?.groupFormed}");
+      print("groupOwnerAddress: ${wifiP2PInfo?.groupOwnerAddress}");
+      print("clients: ${wifiP2PInfo?.clients}");
 
-        // downloadPath is the directory where received file will be stored
+      await _flutterP2pConnectionPlugin.connectToSocket(
+        groupOwnerAddress: wifiP2PInfo!.groupOwnerAddress,
         downloadPath: "/storage/emulated/0/Download/",
-        // the max number of downloads at a time. Default is 2.
-        maxConcurrentDownloads: 2,
-        // delete incomplete transfered file
+        maxConcurrentDownloads: 3,
         deleteOnError: true,
-        // on connected to socket
         onConnect: (address) {
           print("connected to socket: $address");
         },
-        // receive transfer updates for both sending and receiving.
         transferUpdate: (transfer) {
-          // transfer.count is the amount of bytes transfered
-          // transfer.total is the file size in bytes
-          // if transfer.receiving is true, you are receiving the file, else you're sending the file.
-          // call `transfer.cancelToken?.cancel()` to cancel transfer. This method is only applicable to receiving transfers.
+          // if (transfer.count == 0) transfer.cancelToken?.cancel();
+          if (transfer.completed) {
+            print(
+                "${transfer.failed ? "failed to ${transfer.receiving ? "receive" : "send"}" : transfer.receiving ? "received" : "sent"}: ${transfer.filename}");
+          }
           print(
               "ID: ${transfer.id}, FILENAME: ${transfer.filename}, PATH: ${transfer.path}, COUNT: ${transfer.count}, TOTAL: ${transfer.total}, COMPLETED: ${transfer.completed}, FAILED: ${transfer.failed}, RECEIVING: ${transfer.receiving}");
         },
-        // handle string transfer from server
         receiveString: (req) async {
           print(req);
         },
@@ -169,6 +218,16 @@ class _MyHomePageState extends State<PdfViewerPage>
     }
   }
 
+  Future closeSocketConnection() async {
+    bool closed = _flutterP2pConnectionPlugin.closeSocket();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          "closed: $closed",
+        ),
+      ),
+    );
+  }
 
 
 
