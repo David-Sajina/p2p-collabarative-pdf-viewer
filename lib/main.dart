@@ -32,6 +32,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           ));
   }
 }
+
+bool pdfComing = false;
 int _currentPage = 0;
 String? pdfPath;
 String _file = "";
@@ -182,6 +184,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
   void _openPdfViewer() {
     if(pdfPath != null) {
+      pdfComing = false;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -326,6 +329,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   child: Text("Send"),
                   onPressed: () {
                     int i = 0;
+                    nearbyService.sendMessage(device.deviceId, "%PDF COMING");
                     Timer.periodic(const Duration(milliseconds: 20),(timer) {
                       if(_file.length - (i + 10000) < 0) {
                         print("sent ${_file.length % 10000}");
@@ -437,63 +441,42 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     String base64data ="";
     receivedDataSubscription =
         nearbyService.dataReceivedSubscription(callback: (data) async {
-          // base64data += data['message'];
-          // print(data['message'].length);
-          // if(data['message'].length < 10000){
-          //   print("zadnja ${data['message']}");
-          //   print("ogromno $base64data");
-          //   Map<Permission, PermissionStatus> statuses = await [
-          //     Permission.storage,
-          //   ].request();
-          //   final directory = await getExternalStorageDirectory();
-          //
-          //   // Create the directory if it doesn't exist
-          //   final downloadsDirectory = Directory('${directory?.path}/Download');
-          //   if (!downloadsDirectory.existsSync()) {
-          //     downloadsDirectory.createSync(recursive: true);
-          //   }
-          //
-          //   // Save base64data to a text file in the downloads directory.
-          //   final file = File('${downloadsDirectory.path}/base64dataa.txt');
-          //   await file.writeAsString(base64data, mode: FileMode.append);
-          //
-          //   print("FILEEEEEEE ${directory?.path}");
-          // }
+          if(pdfComing) {
+        base64data += data['message'];
+        print(data['message'].length);
+        if (data['message'].length < 10000) {
+          print("zadnja ${data['message']}");
+          print("ogromno $base64data");
+          Map<Permission, PermissionStatus> statuses = await [
+            Permission.storage,
+          ].request();
+          // Decode base64 data back to binary
+          List<int> bytes = base64.decode(base64data);
 
+          // Get the external storage directory
+          final directory = await getExternalStorageDirectory();
 
-
-          base64data += data['message'];
-          print(data['message'].length);
-          if (data['message'].length < 10000) {
-            print("zadnja ${data['message']}");
-            print("ogromno $base64data");
-            Map<Permission, PermissionStatus> statuses = await [
-              Permission.storage,
-            ].request();
-            // Decode base64 data back to binary
-            List<int> bytes = base64.decode(base64data);
-
-            // Get the external storage directory
-            final directory = await getExternalStorageDirectory();
-
-            // Create the directory if it doesn't exist
-            final downloadsDirectory = Directory('${directory?.path}/Download');
-            if (!downloadsDirectory.existsSync()) {
-              downloadsDirectory.createSync(recursive: true);
-            }
-
-            // Save binary data to a PDF file in the downloads directory
-            final file = File('${downloadsDirectory.path}/received_file.pdf');
-            await file.writeAsBytes(bytes);
-
-            print("PDF saved to: ${file.path}");
-            if(base64data.length > 100){
-              _file = "${downloadsDirectory.path}/received_file.pdf";
-              await selectPDF(true);
-              _openPdfViewer();
-            }
+          // Create the directory if it doesn't exist
+          final downloadsDirectory = Directory('${directory?.path}/Download');
+          if (!downloadsDirectory.existsSync()) {
+            downloadsDirectory.createSync(recursive: true);
           }
-          showToast(data['message'],
+
+          // Save binary data to a PDF file in the downloads directory
+          final file = File('${downloadsDirectory.path}/received_file.pdf');
+          await file.writeAsBytes(bytes);
+
+          print("PDF saved to: ${file.path}");
+          if (base64data.length > 100) {
+            _file = "${downloadsDirectory.path}/received_file.pdf";
+            await selectPDF(true);
+             _openPdfViewer();
+            print("pdf coming false $pdfComing");
+          }
+        }
+      } if(data['message']=="%PDF COMING") pdfComing = true;
+          print("pdffffff ${data['message'] == "%PDF COMING"} ${data['message']}");
+      showToast(data['message'],
               context: context,
               axis: Axis.horizontal,
               alignment: Alignment.center,
