@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 void main() {
   runApp(MyApp());
@@ -31,8 +32,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           ));
   }
 }
-
-
+int _currentPage = 0;
+String? pdfPath;
 String _file = "";
 Future<void> _openFilePicker() async {
   FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -60,6 +61,19 @@ Future<void> _openFilePicker() async {
     print("No file selected.");
   }
 
+}
+
+Future<void> selectPDF(bool isDownlaoded) async {
+  if(isDownlaoded){
+    pdfPath = _file;
+  }
+  else {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    pdfPath = result?.files.single.path!;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -151,6 +165,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
 
   bool isInit = false;
 
+
   @override
   void initState() {
     super.initState();
@@ -164,6 +179,21 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService.stopBrowsingForPeers();
     nearbyService.stopAdvertisingPeer();
     super.dispose();
+  }
+  void _openPdfViewer() {
+    if(pdfPath != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Scaffold(
+            appBar: AppBar(
+              title: Text('PDF Viewer'),
+            ),
+            body: SfPdfViewer.file(File(pdfPath!)),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -309,9 +339,16 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                     });
 
                     myController.text = '';
-                    print("kurac $_file");
                   },
-                )
+                ),
+                TextButton(
+                  child: Text("Open PDF"),
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await selectPDF(false);
+                    _openPdfViewer();
+                  },
+                ),
               ],
             );
           });
@@ -450,6 +487,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             await file.writeAsBytes(bytes);
 
             print("PDF saved to: ${file.path}");
+            if(base64data.length > 100){
+              _file = "${downloadsDirectory.path}/received_file.pdf";
+              await selectPDF(true);
+              _openPdfViewer();
+            }
           }
           showToast(data['message'],
               context: context,
