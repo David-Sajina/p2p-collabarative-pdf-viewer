@@ -32,7 +32,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           ));
   }
 }
-
+bool client = false;
 bool pdfComing = false;
 int _currentPage = 0;
 String? pdfPath;
@@ -102,6 +102,7 @@ class Home extends StatelessWidget {
             child: InkWell(
               onTap: () {
                 Navigator.pushNamed(context, 'browser');
+                client = true;
               },
               child: Container(
                 color: Colors.red,
@@ -116,6 +117,7 @@ class Home extends StatelessWidget {
           Expanded(
             child: InkWell(
               onTap: () {
+                client=false;
                 Navigator.pushNamed(context, 'advertiser');
               },
               child: Container(
@@ -198,6 +200,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       );
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +334,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   onPressed: () {
                     int i = 0;
                     nearbyService.sendMessage(device.deviceId, "%PDF COMING");
+                    sleep(const Duration(seconds: 1));
                     Timer.periodic(const Duration(milliseconds: 20),(timer) {
                       if(_file.length - (i + 10000) < 0) {
                         print("sent ${_file.length % 10000}");
@@ -475,7 +480,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
           }
         }
       } if(data['message']=="%PDF COMING") pdfComing = true;
-          print("pdffffff ${data['message'] == "%PDF COMING"} ${data['message']}");
       showToast(data['message'],
               context: context,
               axis: Axis.horizontal,
