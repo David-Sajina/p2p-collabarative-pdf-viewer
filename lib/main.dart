@@ -209,11 +209,18 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       );
     }
   }
+  void jumpTo(double yOff){
+    pdfController.jumpTo(yOffset: yOff);
 
+  }
+double? localyOff;
   void startStreaming() {
+    localyOff = pdfController.scrollOffset.dy;
     Timer.periodic(const Duration(milliseconds: 500), (timer) {
       print("Vertical Offset: ${pdfController.scrollOffset.dy}");
-      nearbyService.sendMessage(deviceIds[0], "${pdfController.scrollOffset.dy}" );
+      if(pdfController.scrollOffset.dy != localyOff){
+        localyOff = pdfController.scrollOffset.dy;
+      nearbyService.sendMessage(deviceIds[0], "${pdfController.scrollOffset.dy}" );}
 
     });}
 
@@ -496,14 +503,21 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             print("pdf coming false $pdfComing");
           }
         }
-      } if(data['message']=="%PDF COMING") pdfComing = true;
-          if(!pdfComing) {
-            showToast(data['message'],
-                context: context,
-                axis: Axis.horizontal,
-                alignment: Alignment.center,
-                position: StyledToastPosition.bottom);
-          }
+      } if(data['message']=="%PDF COMING") {pdfComing = true;
+          showToast(data['message'],
+              context: context,
+              axis: Axis.horizontal,
+              alignment: Alignment.center,
+              position: StyledToastPosition.bottom);}
+
+        if(!pdfComing){
+          print(data['message']);
+          print(data['message'].runtimeType);
+          double d = double.parse(data['message']);
+          jumpTo(d);
+        }
+
+
 
   });
   }
