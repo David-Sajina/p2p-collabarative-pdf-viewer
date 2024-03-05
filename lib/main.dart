@@ -184,9 +184,14 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService.stopAdvertisingPeer();
     super.dispose();
   }
+
+  late SfPdfViewer viewer;
   void _openPdfViewer() {
-    if(pdfPath != null) {
+    if (pdfPath != null) {
       pdfComing = false;
+      // if (!client)
+      viewer = SfPdfViewer.file(File(pdfPath!));
+      startStreaming();
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -194,12 +199,25 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             appBar: AppBar(
               title: Text('PDF Viewer'),
             ),
-            body: SfPdfViewer.file(File(pdfPath!)),
+            body: viewer,
           ),
         ),
       );
     }
   }
+
+  void startStreaming() {
+    Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      print(viewer.onTap);
+      if (viewer != null && viewer.controller != null) {
+        print("Horizontal Offset: ${viewer.controller!.scrollOffset.dx}");
+        print("Vertical Offset: ${viewer.controller!.scrollOffset.dy}");
+      } else {
+        print("NO WORK");
+      }
+    });
+  }
+
 
 
 
