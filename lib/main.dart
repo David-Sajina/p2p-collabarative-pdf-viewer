@@ -34,7 +34,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 }
 bool client = false;
 bool pdfComing = false;
-int _currentPage = 0;
+List<String> deviceIds = [];
 String? pdfPath;
 String _file = "";
 Future<void> _openFilePicker() async {
@@ -184,13 +184,17 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService.stopAdvertisingPeer();
     super.dispose();
   }
-
   late SfPdfViewer viewer;
+  late PdfViewerController pdfController;
+
   void _openPdfViewer() {
     if (pdfPath != null) {
       pdfComing = false;
-      // if (!client)
-      viewer = SfPdfViewer.file(File(pdfPath!));
+      pdfController = PdfViewerController();
+      viewer = SfPdfViewer.file(
+        File(pdfPath!),
+        controller: pdfController,
+      );
       startStreaming();
       Navigator.push(
         context,
@@ -208,20 +212,14 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
 
   void startStreaming() {
     Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      print(viewer.onTap);
-      if (viewer != null && viewer.controller != null) {
-        print("Horizontal Offset: ${viewer.controller!.scrollOffset.dx}");
-        print("Vertical Offset: ${viewer.controller!.scrollOffset.dy}");
-      } else {
-        print("NO WORK");
-      }
-    });
-  }
+      print("Vertical Offset: ${pdfController.scrollOffset.dy}");
+      nearbyService.sendMessage(deviceIds[0], "${pdfController.scrollOffset.dy}" );
+
+    });}
 
 
 
-
-  @override
+        @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
@@ -351,6 +349,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   child: Text("Send"),
                   onPressed: () {
                     int i = 0;
+                    deviceIds.add(device.deviceId);
                     nearbyService.sendMessage(device.deviceId, "%PDF COMING");
                     sleep(const Duration(seconds: 1));
                     Timer.periodic(const Duration(milliseconds: 20),(timer) {
@@ -498,11 +497,14 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
           }
         }
       } if(data['message']=="%PDF COMING") pdfComing = true;
-      showToast(data['message'],
-              context: context,
-              axis: Axis.horizontal,
-              alignment: Alignment.center,
-              position: StyledToastPosition.bottom);
-        });
+          if(!pdfComing) {
+            showToast(data['message'],
+                context: context,
+                axis: Axis.horizontal,
+                alignment: Alignment.center,
+                position: StyledToastPosition.bottom);
+          }
+
+  });
   }
 }
