@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 import 'package:device_info/device_info.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:flutter/material.dart';
@@ -27,17 +28,35 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     default:
       return MaterialPageRoute(
           builder: (_) => Scaffold(
-            body: Center(
-                child: Text('No route defined for ${settings.name}')),
-          ));
+                body: Center(
+                    child: Text('No route defined for ${settings.name}')),
+              ));
   }
 }
+
 bool client = false;
 bool pdfComing = false;
 List<String> deviceIds = [];
 String? pdfPath;
 String _file = "";
+
 Future<void> _openFilePicker() async {
+  Map<Permission, PermissionStatus> statuses = await [
+  Permission.storage,
+    Permission.videos,
+    Permission.photos,
+    Permission.accessMediaLocation,
+    Permission.location,
+    Permission.manageExternalStorage,
+    Permission.activityRecognition,
+    Permission.audio,
+    Permission.bluetoothConnect,
+    Permission.sensors,
+    Permission.bluetoothScan,
+    Permission.mediaLibrary,
+    Permission.nearbyWifiDevices
+  ].request();
+  await Permission.manageExternalStorage.request();
   FilePickerResult? result = await FilePicker.platform.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['pdf', 'txt'],
@@ -62,14 +81,12 @@ Future<void> _openFilePicker() async {
   } else {
     print("No file selected.");
   }
-
 }
 
 Future<void> selectPDF(bool isDownlaoded) async {
-  if(isDownlaoded){
+  if (isDownlaoded) {
     pdfPath = _file;
-  }
-  else {
+  } else {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -89,10 +106,6 @@ class MyApp extends StatelessWidget {
 }
 
 class Home extends StatelessWidget {
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,25 +121,25 @@ class Home extends StatelessWidget {
                 color: Colors.red,
                 child: Center(
                     child: Text(
-                      'BROWSER',
-                      style: TextStyle(color: Colors.white, fontSize: 40),
-                    )),
+                  'BROWSER',
+                  style: TextStyle(color: Colors.white, fontSize: 40),
+                )),
               ),
             ),
           ),
           Expanded(
             child: InkWell(
               onTap: () {
-                client=false;
+                client = false;
                 Navigator.pushNamed(context, 'advertiser');
               },
               child: Container(
                 color: Colors.green,
                 child: Center(
                     child: Text(
-                      'ADVERTISER',
-                      style: TextStyle(color: Colors.white, fontSize: 40),
-                    )),
+                  'ADVERTISER',
+                  style: TextStyle(color: Colors.white, fontSize: 40),
+                )),
               ),
             ),
           ),
@@ -137,9 +150,9 @@ class Home extends StatelessWidget {
                 color: Colors.red,
                 child: Center(
                     child: Text(
-                      'DATA',
-                      style: TextStyle(color: Colors.white, fontSize: 40),
-                    )),
+                  'DATA',
+                  style: TextStyle(color: Colors.white, fontSize: 40),
+                )),
               ),
             ),
           ),
@@ -166,10 +179,9 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   late NearbyService nearbyService;
   late StreamSubscription subscription;
   late StreamSubscription receivedDataSubscription;
-
+  String? resolution;
+  double height = 0;
   bool isInit = false;
-
-
   @override
   void initState() {
     super.initState();
@@ -184,6 +196,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService.stopAdvertisingPeer();
     super.dispose();
   }
+
   late SfPdfViewer viewer;
   late PdfViewerController pdfController;
 
@@ -196,37 +209,42 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         controller: pdfController,
       );
       startStreaming();
+      //height = MediaQuery.of(context).size.height;
+      FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+      height = view.devicePixelRatio;
+      print("height $height");
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => Scaffold(
-            appBar: AppBar(
-              title: Text('PDF Viewer'),
-            ),
             body: viewer,
           ),
         ),
       );
     }
   }
-  void jumpTo(double yOff){
-    pdfController.jumpTo(yOffset: yOff);
 
+  void jumpTo(double yOffset) {
+    pdfController.jumpTo(yOffset: yOffset);
   }
-double? localyOff;
+
+  double? localyOff;
+
   void startStreaming() {
     localyOff = pdfController.scrollOffset.dy;
-    Timer.periodic(const Duration(milliseconds: 500), (timer) {
+
+    Timer.periodic(const Duration(milliseconds: 1), (timer) {
       print("Vertical Offset: ${pdfController.scrollOffset.dy}");
-      if(pdfController.scrollOffset.dy != localyOff){
+      if (pdfController.scrollOffset.dy != localyOff) {
         localyOff = pdfController.scrollOffset.dy;
-      nearbyService.sendMessage(deviceIds[0], "${pdfController.scrollOffset.dy}" );}
+        for (String i in deviceIds) {
+          nearbyService.sendMessage(i, "${pdfController.scrollOffset.dy * height}");
+        }
+      }
+    });
+  }
 
-    });}
-
-
-
-        @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
@@ -247,19 +265,19 @@ double? localyOff;
                       children: [
                         Expanded(
                             child: GestureDetector(
-                              onTap: () => _onTabItemListener(device),
-                              child: Column(
-                                children: [
-                                  Text(device.deviceName),
-                                  Text(
-                                    getStateName(device.state),
-                                    style: TextStyle(
-                                        color: getStateColor(device.state)),
-                                  ),
-                                ],
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          onTap: () => _onTabItemListener(device),
+                          child: Column(
+                            children: [
+                              Text(device.deviceName),
+                              Text(
+                                getStateName(device.state),
+                                style: TextStyle(
+                                    color: getStateColor(device.state)),
                               ),
-                            )),
+                            ],
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        )),
                         // Request connect
                         GestureDetector(
                           onTap: () => _onButtonClicked(device),
@@ -359,15 +377,17 @@ double? localyOff;
                     deviceIds.add(device.deviceId);
                     nearbyService.sendMessage(device.deviceId, "%PDF COMING");
                     sleep(const Duration(seconds: 1));
-                    Timer.periodic(const Duration(milliseconds: 20),(timer) {
-                      if(_file.length - (i + 10000) < 0) {
+                    Timer.periodic(const Duration(milliseconds: 20), (timer) {
+                      if (_file.length - (i + 10000) < 0) {
                         print("sent ${_file.length % 10000}");
                         print("SUBSTRING ${_file.substring(i, _file.length)}");
-                        nearbyService.sendMessage(device.deviceId, _file.substring(i, _file.length));
+                        nearbyService.sendMessage(
+                            device.deviceId, _file.substring(i, _file.length));
                         timer.cancel();
                         return;
                       }
-                      nearbyService.sendMessage(device.deviceId, _file.substring(i, i + 10000));
+                      nearbyService.sendMessage(
+                          device.deviceId, _file.substring(i, i + 10000));
                       i += 10000;
                     });
 
@@ -418,6 +438,7 @@ double? localyOff;
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      print("aaaaaaaaaaaaaaaaaaaaaaa $resolution");
       devInfo = androidInfo.model;
     }
     if (Platform.isIOS) {
@@ -445,40 +466,37 @@ double? localyOff;
         });
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
-          devicesList.forEach((element) {
-            print(
-                " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
+      devicesList.forEach((element) {
+        print(
+            " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
 
-            if (Platform.isAndroid) {
-              if (element.state == SessionState.connected) {
-                nearbyService.stopBrowsingForPeers();
-              } else {
-                nearbyService.startBrowsingForPeers();
-              }
-            }
-          });
+        if (Platform.isAndroid) {
+          if (element.state == SessionState.connected) {
+            nearbyService.stopBrowsingForPeers();
+          } else {
+            nearbyService.startBrowsingForPeers();
+          }
+        }
+      });
 
-          setState(() {
-            devices.clear();
-            devices.addAll(devicesList);
-            connectedDevices.clear();
-            connectedDevices.addAll(devicesList
-                .where((d) => d.state == SessionState.connected)
-                .toList());
-          });
-        });
-    String base64data ="";
+      setState(() {
+        devices.clear();
+        devices.addAll(devicesList);
+        connectedDevices.clear();
+        connectedDevices.addAll(devicesList
+            .where((d) => d.state == SessionState.connected)
+            .toList());
+      });
+    });
+    String base64data = "";
     receivedDataSubscription =
         nearbyService.dataReceivedSubscription(callback: (data) async {
-          if(pdfComing) {
+      if (pdfComing) {
         base64data += data['message'];
         print(data['message'].length);
         if (data['message'].length < 10000) {
           print("zadnja ${data['message']}");
           print("ogromno $base64data");
-          Map<Permission, PermissionStatus> statuses = await [
-            Permission.storage,
-          ].request();
           // Decode base64 data back to binary
           List<int> bytes = base64.decode(base64data);
 
@@ -499,26 +517,26 @@ double? localyOff;
           if (base64data.length > 100) {
             _file = "${downloadsDirectory.path}/received_file.pdf";
             await selectPDF(true);
-             _openPdfViewer();
+            _openPdfViewer();
             print("pdf coming false $pdfComing");
           }
         }
-      } if(data['message']=="%PDF COMING") {pdfComing = true;
-          showToast(data['message'],
-              context: context,
-              axis: Axis.horizontal,
-              alignment: Alignment.center,
-              position: StyledToastPosition.bottom);}
+      }
+      if (data['message'] == "%PDF COMING") {
+        pdfComing = true;
+        showToast(data['message'],
+            context: context,
+            axis: Axis.horizontal,
+            alignment: Alignment.center,
+            position: StyledToastPosition.bottom);
+      }
 
-        if(!pdfComing){
-          print(data['message']);
-          print(data['message'].runtimeType);
-          double d = double.parse(data['message']);
-          jumpTo(d);
-        }
-
-
-
-  });
+      if (!pdfComing) {
+        print(data['message']);
+        print(data['message'].runtimeType);
+        double d = double.parse(data['message']);
+        jumpTo(d/height);
+      }
+    });
   }
 }
